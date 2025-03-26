@@ -43,7 +43,6 @@ jobs:
       - if: ${{ github.event_name == 'push' && env.CAN_SKIP == 'false' }}
         name: set up flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
-        working-directory: ./server
       - if: ${{ github.event_name == 'push' && env.CAN_SKIP == 'false' }}
         name: deploy to fly.io
         id: deployToFly
