@@ -1,3 +1,5 @@
+import PropTypes from "prop-types"
+
 const Persons = ({ persons, handleRemove }) => {
 
   return (
@@ -11,4 +13,13 @@ const Persons = ({ persons, handleRemove }) => {
   )
 }
 
+Persons.propTypes = {
+  persons: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string,
+      number: PropTypes.number
+    })
+  ),
+  handleRemove: PropTypes.func
+}
 export default Persons

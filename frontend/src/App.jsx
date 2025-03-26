@@ -3,6 +3,7 @@ import Filter from "./components/Filter"
 import PersonForm from "./components/PersonForm"
 import Persons from "./components/Persons"
 import personService from './services/persons'
+import PropTypes from 'prop-types';
 
 const Notification = ({ message, color }) => {
   if (!message)
@@ -51,7 +52,7 @@ const App = () => {
     const personWithNewNumber = { ...person, number: number }
     personService
       .updateNumber(personWithNewNumber)
-      .then(reponse => {
+      .then(() => {
         setPersons(persons.map(p => p.id === personWithNewNumber.id ? personWithNewNumber : p))
         clearAdditionFields()
         setNotificationColor('green')
@@ -60,7 +61,7 @@ const App = () => {
           setNotificationMessage('')
         }, 5000)
       })
-      .catch(error => {
+      .catch(() => {
         setNotificationColor('red')
         setNotificationMessage(`Information of ${newName} has already been removed from server`)
         setPersons(persons.filter(p => p.id != person.id))
@@ -100,7 +101,7 @@ const App = () => {
     }
     personService
       .remove(id)
-      .then(response => {
+      .then(() => {
         const afterRemove = persons.filter(p => p.id != id)
         setPersons(afterRemove)
       })
@@ -115,7 +116,6 @@ const App = () => {
       .then(response => {
         setPersons(response.data)
       })
-    console.log("persons", persons)
   }, [])
 
   return (
@@ -140,6 +140,11 @@ const App = () => {
 
     </div>
   )
+}
+
+Notification.propTypes = {
+  message: PropTypes.string,
+  color: PropTypes.string.isRequired
 }
 
 export default App
