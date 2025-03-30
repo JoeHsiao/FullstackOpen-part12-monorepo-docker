@@ -1,0 +1,78 @@
+name: Deployment pipeline
+
+env:
+  CAN_SKIP: ${{ contains(join(github.event.commits.*.message, '\n'), '#skip') }}
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
+
+jobs:
+  deployment_pipeline:
+    runs-on: ubuntu-20.04
+    concurrency: deploy-group
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "23"
+      - name: Install dependencies (frontend)
+        run: npm install
+        working-directory: ./frontend
+      - name: lint (frontend)
+        run: npm run lint
+        working-directory: ./frontend
+      - name: build (frontend)
+        run: npm run build
+        working-directory: ./frontend
+
+      - name: Install dependencies (backend)
+        run: npm install
+        working-directory: ./server
+      - name: lint (backend)
+        run: npm run lint
+        working-directory: ./server
+      - name: build frontend and copy over (backend)
+        run: npm run build:ui
+        working-directory: ./server
+      - if: ${{ github.event_name == 'push' && env.CAN_SKIP == 'false' }}
+        name: set up flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      - if: ${{ github.event_name == 'push' && env.CAN_SKIP == 'false' }}
+        name: deploy to fly.io
+        id: deployToFly
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        working-directory: ./server
+      - name: deployment successful notification
+        if: ${{ steps.deployToFly.outcome == 'success' }}
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          content: "Deployment successful for ${{ github.event.repository.html_url }}"
+      - name: pipeline failure notification
+        if: ${{ failure() }}
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          content: "Deployment pipeline failed"
+
+  tag_release:
+    if: ${{ github.event_name == 'push' }}
+    needs: deployment_pipeline
+    runs-on: ubuntu-20.04
+    steps:
+      - if: ${{ env.CAN_SKIP == 'false' }}
+        uses: actions/checkout@v4
+      - if: ${{ env.CAN_SKIP == 'false' }}
+        name: Bump version and push tag
+        uses: anothrNick/github-tag-action@1.71.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: patch
