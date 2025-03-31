@@ -30,7 +30,6 @@ app.get('/api/persons/:id', (request, response, next) => {
   const id = request.params.id
   Person.findById(id)
     .then(result => {
-      console.log('findById', result)
       response.json(result)
     })
     .catch(error => next(error))

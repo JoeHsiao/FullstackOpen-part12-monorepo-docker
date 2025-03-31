@@ -1,0 +1,33 @@
+services:
+  app:
+    image: person-frontend
+    build:
+      context: ./frontend
+      dockerfile: dev.Dockerfile
+    # ports:
+    #   - 5173:5173
+    volumes:
+      - ./frontend:/usr/src/app
+
+  server:
+    image: person-server
+    build:
+      context: ./server
+      dockerfile: dev.Dockerfile
+    env_file:
+      - ./server/.env
+    # ports:
+    #   - 3001:3001
+    volumes:
+      - ./server:/usr/src/app
+
+  nginx:
+    image: nginx:1.20.1
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - 8080:80
+    container_name: reverse-proxy
+    depends_on:
+      - app
+      - server
